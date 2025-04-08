@@ -1,7 +1,7 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const xlsx = require("xlsx");
-const fs = require("fs");
+const fs = require("node:fs");
 
 // const bnccSchema = new mongoose.Schema({
 //     areaConhecimento: String,
@@ -37,281 +37,284 @@ const fs = require("fs");
 const questionSchema = new mongoose.Schema({
   status: {
     type: Number,
-    required: true,
-  },
-  solucao: {
-    type: {
-      solucaoId: {
-        type: String,
-      },
-      tipoQuestao: {
-        type: String,
-      },
-      livroRef: {
-        type: [
-          {
-            ed: {
-              type: String,
-            },
-            colecao: {
-              type: String,
-            },
-            serie: {
-              type: String,
-            },
-            numeroCapitulo: {
-              type: String,
-            },
-            secao: {
-              type: String,
-            },
-          },
-        ],
-      },
-      pmaisAvaliacoes: {
-        type: {
-          sistemaEnsino: {
-            type: String,
-          },
-          lotes: { type: [String] },
-          justificativaQuestao: {
-            type: String,
-          },
-          parametroA: {
-            type: String,
-          },
-          parametroB: {
-            type: String,
-          },
-          parametroC: {
-            type: String,
-          },
-          bisserial: {
-            type: String,
-          },
-          probabilidadeFaixas: { type: [String] },
-        },
-      },
-    },
-  },
-  universo: {
-    type: String,
-  },
-  isFontePoliedro: {
-    type: Boolean,
+    required: true
   },
   aggregatedId: {
     type: Number,
   },
-  areaConhecimentoId: {
-    type: Number,
-  },
-  disciplinaId: {
-    type: Number,
-  },
-  orientacaoEstudo: {
+  stage: {
     type: String,
   },
-  fontesUnicas: { 
-    type: [String] 
-  },
-  etapa: {
-    type: String,
-    required: [false, "Etapa da questão é obrigatória"],
-  },
-  ano: {
+  year: {
     type: [String],
   },
-  origem: {
-    type: {
-      tipo: {
-        type: String,
-        required: false,
-        enum: ["Interna/Externa", "Poliedro"],
-      },
-      externo: {
-        type: Map,
-        of: [String]
-      },
-      simulado: {
-        type: String,
-      },
-    },
-    required: false,
-  },
-  classificacao: {
-    type: {
-      tradicional: {
-        type: [String],
-      },
-      enem: {
-        type: [String],
-      },
-      bncc: { 
-        type: [String] 
-      },
-      itinerarioFormativos: { 
-        type: [String] 
-      },
-      itinerarioFormativosId: { 
-        type: String 
-      },
-    },
-    required: false,
-  },
-  cicloAvaliativo: {
-    type: {
-      estudar: {
-        type: String,
-      },
-      praticar: {
-        type: String,
-      },
-      videoAula: { 
-        type: String 
-      },
-      linkExterno: { 
-        type: String
-      },
-      materialDigital: { 
-        type: String 
-      },
-      pMaisId: { 
-        type: String 
-      },
-      nomeLivro: { 
-        type: String 
-      },
-      anoUso: { 
-        type: String 
-      },
-      pagina: { 
-        type: String 
-      },
-      disciplina: { 
-        type: String 
-      },
-      frente: { 
-        type: String 
-      },
-      capitulo: { 
-        type: String 
-      },
-      cicloAvaliativoId: { 
-        type: String 
-      },
-    },
-    required: false,
-  },
-  complexidade: {
+  knowledgeArea: {
     type: String,
-    required: false,
   },
-  classificacaoQuestao: {
+  subject: {
     type: String,
-    required: false,
   },
-  conteudo: {
+  transversalTheme: {
+    type: String,
+  },
+  origin: {
     type: {
-      tagsVisuais: {
+      type: String,
+      enum: ['External', 'FTD'],
+    },
+    external: [
+      {
         type: {
-          tipo: {
+          source: {
             type: String,
           },
-          tags: {
-            type: [String],
+          sublevels: {
+            type: [
+              {
+                code: { type: String },
+                level: { type: Number },
+              },
+            ],
           },
         },
-        required: false,
       },
-      campos: [
+    ],
+  },
+  complexity: {
+    type: String,
+  },
+  classification: {
+    type: {
+      traditional: {
+        type: [
+          {
+            id: { type: String },
+            subject: { type: String },
+            levels: {
+              type: [
+                {
+                  id: { type: String },
+                  code: { type: String },
+                  level: { type: Number },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      enem: {
+        type: [
+          {
+            id: { type: String },
+            code: { type: String },
+            competence: {
+              type: {
+                code: { type: String },
+                description: { type: String },
+              },
+            },
+            skill: {
+              type: {
+                code: { type: String },
+                description: { type: String },
+              },
+            },
+            knowledgeArea: { type: String },
+            segments: { type: [String] },
+          },
+        ],
+      },
+      bncc: {
+        type: [
+          {
+            id: { type: String },
+            skillCode: { type: String },
+            skill: { type: String },
+            knowledgeArea: { type: String },
+            segments: {
+              type: [String],
+            },
+          },
+        ],
+      },
+      formativeTracks: {
+        type: {
+          id: { type: String },
+          tracks: { type: [String] }
+        },
+      }
+    }
+  },
+  content: {
+    type: {
+      introductoryText: {
+        type: {
+          body: { type: String },
+          hasVisualElement: { type: Boolean }
+        }
+      },
+      supportText: {
+        type: {
+          body: { type: String },
+          hasVisualElement: { type: Boolean }
+        }
+      },
+      fields: [
         {
           type: {
-            enunciado: {
+            statement: {
               type: {
-                corpo: {
-                  type: String,
-                  required: false,
+                body: {
+                  type: String
+                },
+                text: {
+                  type: String
+                },
+                hasVisualElement: {
+                  type: Boolean
                 },
               },
             },
-            textoIntrodutorio: {
+            format: {
               type: String,
             },
-            formato: {
-              type: String,
-              required: true,
-            },
-            alternativas: [
+            alternatives: [
               {
                 type: {
-                  ordem: {
+                  order: {
                     type: Number,
                   },
                   label: {
                     type: String,
                   },
-                  corpo: {
+                  body: {
                     type: String,
                   },
-                  correta: {
+                  correct: {
                     type: Boolean,
                   },
-                  valorNominal: {
+                  nominalValue: {
                     type: Number,
                   },
-                  valorReal: {
+                  realValue: {
                     type: Number,
                   },
-                  justificativa: {
+                  justification: {
                     type: String,
                   },
-                  limiteCaracteres: {
+                  charLimit: {
                     type: Number,
                   },
-                  respostaNumericas: {
+                  isNumericAnswer: {
                     type: Boolean,
                   },
+                  hasVisualElement: {
+                    type: Boolean
+                  }
                 },
               },
             ],
           },
         },
       ],
-      resolucao: {
+      solution: {
         type: {
-          corpo: {
-            type: String,
-            required: false,
+          body: {
+            type: String
           },
-          resposta: {
-            type: String,
-            required: false,
+          answer: {
+            type: String
+          },
+          hasVisualElement: {
+            type: Boolean
           }
         },
       },
+    }
+  },
+  solutionDetails: {
+    type: {
+      solutionId: {
+        type: String,
+      },
+      questionType: {
+        type: String,
+      },
+      referenceBook: {
+        type: [
+          {
+            edition: {
+              type: String,
+            },
+            collection: {
+              type: String,
+            },
+            series: {
+              type: String,
+            },
+            chapterNumber: {
+              type: String,
+            },
+            section: {
+              type: String,
+            },
+          },
+        ],
+      },
+      ftdAssessments: {
+        type: {
+          educationSystem: {
+            type: String,
+          },
+          batches: { type: [String] },
+          questionJustification: {
+            type: String,
+          },
+          parameterA: {
+            type: String,
+          },
+          parameterB: {
+            type: String,
+          },
+          parameterC: {
+            type: String,
+          },
+          bisserial: {
+            type: String,
+          },
+          probabilityRanges: { type: [String] },
+        },
+      },
     },
-    required: false,
   },
-  temaTransversal: {
-    type: String,
-  },
-  posAplicacao: {
-    type: Boolean,
-  },
-  criadoEm: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },
-  criadoPor: {
+  createdBy: {
     type: String,
   },
-  ultimaAtualizacao: {
+  lastUpdated: {
     type: Date,
   },
-  questaoUtilizada: {
+  questionUsed: {
     type: Boolean,
   },
+  anchorQuestion: {
+    type: Boolean,
+  },
+  history: {
+    type: [String],
+  },
+  relatedProject: {
+    type: {
+      id: { type: Number },
+      label: { type: String }
+    }
+  },
+  questionCycle: {
+    type: Number
+  }
 });
 
 const Question = mongoose.model("questoes", questionSchema);
@@ -329,7 +332,7 @@ async function connectToMongoDB() {
 }
 
 async function processSpreadsheet() {
-  const workbook = xlsx.readFile("carga10-v3-parou.xlsx");
+  const workbook = xlsx.readFile("enem-carga-v3.xlsx");
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = xlsx.utils.sheet_to_json(sheet);
   const questions = [];
@@ -343,15 +346,16 @@ async function processSpreadsheet() {
     opcoes.forEach((opcao, index) => {
       if (row[`alt${opcao}`]) {
         const alternativa = {
-          ordem: index + 1,
+          order: index + 1,
           label: opcao,
-          corpo: row[`alt${opcao}`],
-          correta: row[`alt${opcao}-correta`] === 1,
-          valorNominal: row[`alt${opcao}-valor`],
-          valorReal: 0,
-          justificativa: "",
-          limiteCaracteres: 0,
-          respostaNumericas: false,
+          body: row[`alt${opcao}`],
+          correct: row[`alt${opcao}-correta`] === 1,
+          nominalValue: row[`alt${opcao}-valor`],
+          realValue: 0,
+          justification: "",
+          charLimit: 0,
+          isNumericAnswer: false,
+          hasVisualElement: false,
         };
         alternativas.push(alternativa);
       }
@@ -359,8 +363,8 @@ async function processSpreadsheet() {
 
     if (row.TipoQuestao === "Somatório") {
       //console.log('entrou no if')
-      const respostaString = row.Resposta; 
-      const resposta = parseInt(respostaString, 10); 
+      const respostaString = row.Resposta;
+      const resposta = parseInt(respostaString, 10);
 
       function encontrarCombinacao(alternativas, alvo, indice = 0, somaAtual = 0, combinacao = []) {
         if (somaAtual === alvo) {
@@ -557,16 +561,16 @@ async function processSpreadsheet() {
     let fontesLvl1 = new Set()
 
     for (let i = 1; i <= 6; i++) {
-        const fonte = [];
-        for (let j = 1; j <= 7; j++) {
-            const cellValue = row[`fonte${i}-${j}`];
-            if (cellValue && cellValue !== "#N/D") {
-                fonte.push(cellValue);
-            }
+      const fonte = [];
+      for (let j = 1; j <= 7; j++) {
+        const cellValue = row[`fonte${i}-${j}`];
+        if (cellValue && cellValue !== "#N/D") {
+          fonte.push(cellValue);
         }
-        if(fonte.length > 0){
-          fontesArray[i] = fonte;
-        }
+      }
+      if (fonte.length > 0) {
+        fontesArray[i] = fonte;
+      }
     }
 
     Object.values(fontesArray).forEach(v => {
@@ -575,7 +579,7 @@ async function processSpreadsheet() {
 
     fontesLvl1 = Array.from(fontesLvl1)
 
-    if(row[`matriz1-IF2`] === "Itinerários Formativos") {
+    if (row[`matriz1-IF2`] === "Itinerários Formativos") {
       itinerarios[0] = row[`matriz1-IF2`]
       for (let i = 1; i <= 4; i++) {
         const cellValue = row[`matriz1-${i}`];
@@ -597,7 +601,7 @@ async function processSpreadsheet() {
     var capitulo = "";
     var cicloAvaliativoId = "";
 
-    if (typeof row["CicloAvaliativoId"] !== 'undefined'){
+    if (typeof row["CicloAvaliativoId"] !== 'undefined') {
       var estudar = row["Estudar"]
       var praticar = row["Praticar"]
       var videoAula = row["VideoAula"]
@@ -612,31 +616,31 @@ async function processSpreadsheet() {
       var capitulo = row["Capitulo"]
       var cicloAvaliativoId = row["CicloAvaliativoId"]
     }
-    
+
     const anoSerie = []
     var encontrou = false
 
-    if(row.segmento == "Ensino Médio"){
+    if (row.segmento == "Ensino Médio") {
       anoSerie.push("1ª Série")
       anoSerie.push("2ª Série")
       anoSerie.push("3ª Série")
       encontrou = true
     }
 
-    if (typeof row[`matriz1-${3}`] !== 'undefined' && encontrou == false){
+    if (typeof row[`matriz1-${3}`] !== 'undefined' && encontrou == false) {
 
-      if ((row[`matriz1-${3}`]).includes("EF0")){
+      if ((row[`matriz1-${3}`]).includes("EF0")) {
         anoSerie.push((row[`matriz1-${3}`]).substring(3, 4) + "º ano")
         encontrou = true
-      } 
+      }
 
-      if ((row[`matriz1-${3}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz1-${3}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz1-${3}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz1-${3}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -645,20 +649,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz1-${3}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz1-${3}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz1-${3}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz1-${3}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz1-${3}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz1-${3}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -666,7 +670,7 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz1-${3}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz1-${3}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
@@ -674,19 +678,19 @@ async function processSpreadsheet() {
 
     }
 
-    if (typeof row[`matriz1-${4}`] !== 'undefined'){
-      if (row[`matriz1-${4}`].includes("EF0") && encontrou == false){
+    if (typeof row[`matriz1-${4}`] !== 'undefined') {
+      if (row[`matriz1-${4}`].includes("EF0") && encontrou == false) {
         anoSerie.push(row[`matriz1-${4}`].substring(3, 4) + "º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz1-${4}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz1-${4}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz1-${4}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz1-${4}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -695,20 +699,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz1-${4}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz1-${4}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz1-${4}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz1-${4}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz1-${4}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz1-${4}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -716,7 +720,7 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz1-${4}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz1-${4}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
@@ -724,19 +728,19 @@ async function processSpreadsheet() {
 
     }
 
-    if (typeof row[`matriz2-${3}`] !== 'undefined' && encontrou == false){
-      if (row[`matriz2-${3}`].includes("EF0") && encontrou == false){
+    if (typeof row[`matriz2-${3}`] !== 'undefined' && encontrou == false) {
+      if (row[`matriz2-${3}`].includes("EF0") && encontrou == false) {
         anoSerie.push(row[`matriz2-${3}`].substring(3, 4) + "º ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${3}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz2-${3}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${3}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz2-${3}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -745,20 +749,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz2-${3}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz2-${3}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${3}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz2-${3}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${3}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz2-${3}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -766,26 +770,26 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz2-${3}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz2-${3}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
       }
     }
 
-    if (typeof row[`matriz2-${4}`] !== 'undefined' && encontrou == false){
-      if (row[`matriz2-${4}`].includes("EF0") && encontrou == false){
+    if (typeof row[`matriz2-${4}`] !== 'undefined' && encontrou == false) {
+      if (row[`matriz2-${4}`].includes("EF0") && encontrou == false) {
         anoSerie.push(row[`matriz2-${4}`].substring(3, 4) + "º ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${4}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz2-${4}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${4}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz2-${4}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -794,20 +798,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz2-${4}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz2-${4}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${4}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz2-${4}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz2-${4}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz2-${4}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -815,26 +819,26 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz2-${4}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz2-${4}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
       }
     }
 
-    if (typeof row[`matriz3-${3}`] !== 'undefined' && encontrou == false){
+    if (typeof row[`matriz3-${3}`] !== 'undefined' && encontrou == false) {
       if (row[`matriz3-${3}`].includes("EF0") && encontrou == false) {
         anoSerie.push(row[`matriz3-${3}`].substring(3, 4) + "º ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${3}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz3-${3}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${3}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz3-${3}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -843,20 +847,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz3-${3}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz3-${3}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${3}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz3-${3}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${3}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz3-${3}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -864,26 +868,26 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz3-${3}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz3-${3}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
       }
     }
 
-    if (typeof row[`matriz3-${4}`] !== 'undefined' && encontrou == false){
+    if (typeof row[`matriz3-${4}`] !== 'undefined' && encontrou == false) {
       if (row[`matriz3-${4}`].includes("EF0") && encontrou == false) {
         anoSerie.push(row[`matriz3-${4}`].substring(3, 4) + "º ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${4}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz3-${4}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${4}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz3-${4}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -892,20 +896,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz3-${4}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz3-${4}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${4}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz3-${4}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz3-${4}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz3-${4}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -913,26 +917,26 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz3-${4}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz3-${4}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
       }
     }
 
-    if (typeof row[`matriz4-${3}`] !== 'undefined' && encontrou == false){
+    if (typeof row[`matriz4-${3}`] !== 'undefined' && encontrou == false) {
       if (row[`matriz4-${3}`].includes("EF0") && encontrou == false) {
         anoSerie.push(row[`matriz4-${3}`].substring(3, 4) + "º ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${3}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz4-${3}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${3}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz4-${3}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -941,20 +945,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz4-${3}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz4-${3}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${3}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz4-${3}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${3}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz4-${3}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -962,26 +966,26 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz4-${3}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz4-${3}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
       }
     }
-    
-    if (typeof row[`matriz4-${4}`] !== 'undefined' && encontrou == false){
+
+    if (typeof row[`matriz4-${4}`] !== 'undefined' && encontrou == false) {
       if (row[`matriz4-${4}`].includes("EF0") && encontrou == false) {
         anoSerie.push(row[`matriz4-${4}`].substring(3, 4) + "º ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${4}`]).includes("EF12") && encontrou == false){
+      if ((row[`matriz4-${4}`]).includes("EF12") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${4}`]).includes("EF15") && encontrou == false){
+      if ((row[`matriz4-${4}`]).includes("EF15") && encontrou == false) {
         anoSerie.push("1º Ano")
         anoSerie.push("2º Ano")
         anoSerie.push("3º Ano")
@@ -990,20 +994,20 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz4-${4}`]).includes("EF35") && encontrou == false){
+      if ((row[`matriz4-${4}`]).includes("EF35") && encontrou == false) {
         anoSerie.push("3º Ano")
         anoSerie.push("4º Ano")
         anoSerie.push("5º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${4}`]).includes("EF67") && encontrou == false){
+      if ((row[`matriz4-${4}`]).includes("EF67") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         encontrou = true
       }
 
-      if ((row[`matriz4-${4}`]).includes("EF69") && encontrou == false){
+      if ((row[`matriz4-${4}`]).includes("EF69") && encontrou == false) {
         anoSerie.push("6º Ano")
         anoSerie.push("7º Ano")
         anoSerie.push("8º Ano")
@@ -1011,7 +1015,7 @@ async function processSpreadsheet() {
         encontrou = true
       }
 
-      if ((row[`matriz4-${4}`]).includes("EF89") && encontrou == false){
+      if ((row[`matriz4-${4}`]).includes("EF89") && encontrou == false) {
         anoSerie.push("8º Ano")
         anoSerie.push("9º Ano")
         encontrou = true
@@ -1022,7 +1026,7 @@ async function processSpreadsheet() {
     //console.log(cellValue + "-" + cellValue.includes("EF"))
     //console.log(cellValue.substring(3, 4) + "º ano")
 
-    
+
 
     /*for (let i = 1; i <= 6; i++) {
       const fonteObj = {};
@@ -1082,33 +1086,33 @@ async function processSpreadsheet() {
     async function saveErrorQuestions(errorQuestions) {
       const filePath = './erro_questoes.json'; // Caminho do arquivo JSON
       try {
-          // Lê o arquivo existente e adiciona novas questões com erro
-          let existingData = [];
-          if (fs.existsSync(filePath)) {
-              const data = fs.readFileSync(filePath);
-              existingData = JSON.parse(data);
-          }
-  
-          // Adiciona as novas questões com erro ao array existente
-          existingData.push(...errorQuestions);
+        // Lê o arquivo existente e adiciona novas questões com erro
+        let existingData = [];
+        if (fs.existsSync(filePath)) {
+          const data = fs.readFileSync(filePath);
+          existingData = JSON.parse(data);
+        }
 
-  
-          // Escreve o novo conteúdo no arquivo JSON
-          fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2));
-          console.log('Questões com erro salvas em erro_questoes.json');
+        // Adiciona as novas questões com erro ao array existente
+        existingData.push(...errorQuestions);
+
+
+        // Escreve o novo conteúdo no arquivo JSON
+        fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2));
+        console.log('Questões com erro salvas em erro_questoes.json');
       } catch (err) {
-          console.error('Erro ao salvar questões com erro:', err);
+        console.error('Erro ao salvar questões com erro:', err);
       }
-  }
+    }
 
-  async function saveSucessQuestions(sucessQuestions) {
-    const filePath = './sucesso_questoes.json'; // Caminho do arquivo JSON
-    try {
+    async function saveSucessQuestions(sucessQuestions) {
+      const filePath = './sucesso_questoes.json'; // Caminho do arquivo JSON
+      try {
         // Lê o arquivo existente e adiciona novas questões com sucesso
         let existingData = [];
         if (fs.existsSync(filePath)) {
-            const data = fs.readFileSync(filePath);
-            existingData = JSON.parse(data);
+          const data = fs.readFileSync(filePath);
+          existingData = JSON.parse(data);
         }
 
         // Adiciona as novas questões com erro ao array existente
@@ -1117,105 +1121,102 @@ async function processSpreadsheet() {
         // Escreve o novo conteúdo no arquivo JSON
         fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2));
         console.log('Questões com sucesso salvas em sucesso_questoes.json');
-    } catch (err) {
+      } catch (err) {
         console.error('Erro ao salvar questões com sucesso:', err);
+      }
     }
-}
 
     try {
+      const [source, ...sublevels] = fontesArray['1'];
+
       const questionData = {
-        solucao: {
-          //nao vem da planilha a principio
-          solucaoId: "", //bq, itinerarios-formativos, p+av, tarefas, ld
-          tipoQuestao: row.Avaliacao, //se for tarefa
-          livroRef: [],
-          pmaisAvaliacoes: {
-            //se for p+ avaliações
-            sistemaEnsino: "",
-            lotes: [],
-            justificativaQuestao: "",
-            parametroA: "",
-            parametroB: "",
-            parametroC: "",
-            bisserial: "",
-            probabilidadeFaixas: [],
-          },
-        },
-        origem: {
-          tipo: tipoOrigem, //sistema de ensino, externo/vest, interno/simulados
-          externo: fontesArray,
-          simulado: "", // talvez vire simuladoId para referenciar um simulaod
-        },
-        universo: row.UniversoIdCategorico,
-        isFontePoliedro: row.IsFontePoliedro,
+        status: 1,
         aggregatedId: row.AggregatedId,
-        areaConhecimentoId: row.areaConhecimentoId,
-        disciplinaId: row.disciplinaId,
-        etapa: mapSegmento(row.segmento),
-        ano: anoSerie,
-        classificacao: {
-          tradicional: tradicional,
-          enem: enem,
-          bncc: bncc,
-          itinerarioFormativos: itinerarios,
-          itinerarioFormativosId: itinerarioId,
-        }, 
-        cicloAvaliativo: {
-          estudar: estudar,
-          praticar: praticar,
-          videoAula: videoAula,
-          linkExterno: linkExterno,
-          materialDigital: materialDigital,
-          pMaisId: pMaisId,
-          nomeLivro:  nomeLivro,
-          anoUso: anoUso,
-          pagina: pagina,
-          disciplina: disciplina,
-          frente:  frente,
-          capitulo: capitulo,
-          cicloAvaliativoId: cicloAvaliativoId,
-        }, 
-        complexidade: mapDificuldade(row.Dificuldade),
-        classificacaoQuestao: row.Classificacao,
-        conteudo: {
-          tagsVisuais: {
-            tipo: "",
-            tags: [],
+        stage: mapSegmento(row.segmento),
+        year: anoSerie,
+        knowledgeArea: row.areaConhecimentoId,
+        subject: row.disciplina,
+        transversalTheme: null,
+        origin: {
+          type: "FTD", //sistema de ensino, externo/vest, interno/simulados
+          external: {
+            source: source,
+            sublevels: sublevels.map((level, index) => {
+              return {
+                code: level,
+                level: index + 1,
+              }
+            }
+            ),
           },
-          instrucoes: {
-            corpo: "string",
-            tagsVisuais: [],
+        },
+        complexity: mapDificuldade(row.Dificuldade),
+        content: {
+          introductoryText: {
+            body: "",
+            hasVisualElement: false,
           },
-          textoApoio: {
-            original: false,
-            corpo: "string",
-            tagsVisuais: [],
+          supportText: {
+            body: "",
+            hasVisualElement: false,
           },
-          campos: [
+          fields: [
             {
-              enunciado: {
-                corpo: row.Enunciado,
+              statement: {
+                body: row.Enunciado,
+                text: row.EnunciadoTexto,
+                hasVisualElement: false,
               },
-              textoIntrodutorio: "",
-              formato: tipoQuestao,
-              alternativas: alternativas,
+              format: tipoQuestao,
+              alternatives: alternativas,
             },
           ],
-          resolucao: {
-            corpo: row.Resolucao,
-            resposta: row.Resposta,
+          solution: {
+            body: null,
+            answer: null,
+            hasVisualElement: false
           },
         },
-        temaTransversal: "",
-        posAplicacao: false,
-        produzidaIa: false,
-        status: row.QuestaoStatus === "Validada" & !(row.problemaCategorico !== 1) ? 1 : 0,
-        criadoPor: "system",
-        ultimaAtualizacao: row.ModifiedDate !== "NULL" ? new Date(row.ModifiedDate) : new Date(),
-        atualizadoPor: row.usuarioAlteracao,
-        questaoUtilizada: false,
-        fontesUnicas: fontesLvl1,
-        orientacaoEstudo: "",
+        solutionDetails: {
+          //nao vem da planilha a principio
+          solutionId: null, //bq, itinerarios-formativos, p+av, tarefas, ld
+          questionType: null, //se for tarefa
+          referenceBook: [],
+          ftdAssessments: {
+            //se for p+ avaliações
+            educationSystem: "",
+            batches: [],
+            questionJustification: "",
+            parameterA: "",
+            parameterB: "",
+            parameterC: "",
+            bisserial: "",
+            probabilityRanges: [],
+          },
+        },
+        classification: {
+          tradicional: tradicional,
+          enem: {
+            code: enem[0]
+          },
+          bncc: {
+            skillCode: bncc[0]
+          },
+          formativeTracks: {
+            id: itinerarioId,
+            tracks: itinerarios
+          },
+        },
+        createdBy: "system",
+        lastUpdated: row.ModifiedDate !== "NULL" ? new Date(row.ModifiedDate) : new Date(),
+        history: [],
+        questionUsed: false,
+        anchorQuestion: false,
+        relatedProject: {
+          id: 0,
+          label: ""
+        },
+        questionCycle: new Date().getFullYear(),
       };
 
       questions.push(questionData);
@@ -1225,7 +1226,7 @@ async function processSpreadsheet() {
       console.log(`Questão ${row.Id} inserida com sucesso!`);
       sucessQuestions.push({
         id: question._id,
-        tipo: question.conteudo.campos[0].formato,
+        tipo: question.content.fields[0].format,
         aggregatedId: question.aggregatedId
       })
     } catch (error) {
@@ -1245,7 +1246,7 @@ async function processSpreadsheet() {
       await saveSucessQuestions(sucessQuestions);
     }
   }
-  
+
   fs.writeFileSync(
     "questions.json",
     JSON.stringify(questions, null, 2),
@@ -1255,9 +1256,9 @@ async function processSpreadsheet() {
 }
 
 async function main() {
-  //await connectToMongoDB(); //descomentei aqui para subir
+  await connectToMongoDB(); //descomentei aqui para subir  
   await processSpreadsheet();
-  //mongoose.disconnect(); // descomentei aqui para subir
+  mongoose.disconnect(); // descomentei aqui para subir
 }
 
 main().catch((error) => console.error("Erro no script principal:", error));
