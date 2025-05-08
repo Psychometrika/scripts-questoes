@@ -138,3 +138,7 @@ dist
 *.xlsx
 questions.json
 *questoes.json
+*.json
+
+input/*
+output/*
