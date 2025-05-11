@@ -30,10 +30,10 @@ export enum Subject {
 }
 
 export enum KnowledgeArea {
-  LANGUAGES = 'Linguagens, Códigos e suas Tecnologias',
-  HUMAN_SCIENCES = 'Ciências Humanas e suas Tecnologias',
-  NATURAL_SCIENCES = 'Ciências da Natureza e suas Tecnologias',
-  MATH = 'Matemática e suas Tecnologias',
+  'Linguagens' = 'Linguagens, Códigos e suas Tecnologias',
+  'Ciências Humanas' = 'Ciências Humanas e suas Tecnologias',
+  'Ciências da Natureza' = 'Ciências da Natureza e suas Tecnologias',
+  'Matemática' = 'Matemática e suas Tecnologias',
 }
 
 export enum Stage {
@@ -129,19 +129,16 @@ export interface Classification {
 }
 
 interface Traditional {
-  id: string;
   subject: string;
   levels: Level[];
 }
 
 interface Level {
-  id: string;
   code: string;
   level: number;
 }
 
 interface Enem {
-  id: string;
   code: string;
   competence: Competence;
   skill: Skill;
@@ -160,7 +157,6 @@ interface Skill {
 }
 
 interface BNCC {
-  id: string;
   skillCode: string;
   skill: string;
   knowledgeArea: string;
@@ -226,7 +222,6 @@ export interface RelatedProject {
 }
 
 export interface QuestionFTD {
-  id: string;
   aggregatedId?: number;
   knowledgeArea?: KnowledgeArea;
   subject?: Subject;

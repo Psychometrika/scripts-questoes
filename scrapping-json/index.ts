@@ -1,17 +1,18 @@
-import fs from 'fs'
-import path from 'path'
-import { PoliedroToFtdSchemaMapper } from './mappers/poliedro-to-ftd.mapper'
+import { read } from "fs";
+import { connectToMongoDB } from "./config";
+import { PoliedroToFtdSchemaMapper } from "./mappers/poliedro-to-ftd.mapper";
+import { QuestionRepository } from "./repository/QuestionRepository";
+import { ReadAndWriteFileService } from "./services/ReadAndWriteFile.service";
 
+async function execute() {
+  await connectToMongoDB()
 
+  const mapper = new PoliedroToFtdSchemaMapper()
+  const questionRepository = new QuestionRepository()
 
-const inputjson = path.join(__dirname, './input/enem-dev.json')
+  const readAndWriteFileService = new ReadAndWriteFileService(mapper, questionRepository)
 
-const mapper = new PoliedroToFtdSchemaMapper()
+  await readAndWriteFileService.readAndWriteFile()
+}
 
-const jsonFile = JSON.parse(fs.readFileSync(inputjson, 'utf-8'))
-
-const output = mapper.excecute(jsonFile)
-
-const outputjson = path.join(__dirname, './output/enem-dev.json')
-
-
+execute()

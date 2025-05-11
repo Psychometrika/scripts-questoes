@@ -1,16 +1,16 @@
 import { Schema, model } from 'mongoose';
 
 const Question = new Schema({
-  id: { type: String, required: true },
   aggregatedId: { type: Number },
   knowledgeArea: {
     type: String,
-    enum: [
-      'Linguagens, Códigos e suas Tecnologias',
-      'Ciências Humanas e suas Tecnologias',
-      'Ciências da Natureza e suas Tecnologias',
-      'Matemática e suas Tecnologias',
-    ],
+    // enum: [
+    //   'Linguagens, Códigos e suas Tecnologias',
+    //   'Ciências Humanas e suas Tecnologias',
+    //   'Ciências da Natureza e suas Tecnologias',
+    //   'Matemática e suas Tecnologias',
+    //   'Adicionar área do conhecimento'
+    // ],
   },
   subject: {
     type: String,
