@@ -13,7 +13,27 @@ export class PoliedroToFtdSchemaMapper {
     }
   }
 
+  originMapper(origin: string | undefined) {
+    switch (origin) {
+      case 'Poliedro | Sistema de Ensino': return 'FTD'
+      default: return 'Externo'
+    }
+  }
+
+  formatMapper(format: string | undefined) {
+    switch (format) {
+      case 'Simples Escolha': return 'Resposta única (Mútipla escolha)'
+      case 'Dissertativa': return 'Dissertativa'
+      default: return 'Formato não reconhecido'
+    }
+  }
+
   excecute(input: QuestionPoliedro[]) {
+    const formats = input.map((question: QuestionPoliedro) => question.conteudo?.campos?.map((campo) => campo.formato)).flat()
+
+    console.log('formats', new Set(formats));
+
+
     const output = input.map((question: QuestionPoliedro) => ({
       aggregatedId: question.aggregatedId,
       knowledgeArea: question.classificacao?.enems?.length && this.knowledgeAreaMapper(question.classificacao?.enems[0].areaDoConhecimento),
@@ -68,7 +88,7 @@ export class PoliedroToFtdSchemaMapper {
             hasVisualElement: false,
 
           },
-          format: campo.formato,
+          format: this.formatMapper(campo.formato),
           alternatives: campo.alternativas?.map((alternativa) => ({
             order: alternativa.ordem,
             label: alternativa.label,
@@ -94,7 +114,7 @@ export class PoliedroToFtdSchemaMapper {
       },
       status: question.status,
       origin: {
-        type: question.origem?.tipo,
+        type: this.originMapper(question.origem?.tipo),
         external: question.origem?.externos.map((externo) => ({
           source: externo.fonte,
           sublevels: externo.subniveis.map((subnivel) => ({
