@@ -29,11 +29,6 @@ export class PoliedroToFtdSchemaMapper {
   }
 
   excecute(input: QuestionPoliedro[]) {
-    const formats = input.map((question: QuestionPoliedro) => question.conteudo?.campos?.map((campo) => campo.formato)).flat()
-
-    console.log('formats', new Set(formats));
-
-
     const output = input.map((question: QuestionPoliedro) => ({
       aggregatedId: question.aggregatedId,
       knowledgeArea: question.classificacao?.enems?.length && this.knowledgeAreaMapper(question.classificacao?.enems[0].areaDoConhecimento),
