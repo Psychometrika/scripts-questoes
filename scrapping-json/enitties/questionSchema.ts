@@ -45,7 +45,7 @@ const Question = new Schema({
   questionUsed: { type: Boolean, required: true },
   anchorQuestion: { type: Boolean, required: true },
   questionCycle: Number,
-  transversalTheme: String,
+  transversalTheme: [String],
   createdBy: String,
   createdAt: { type: Date, required: true },
   updatedAt: { type: Date },

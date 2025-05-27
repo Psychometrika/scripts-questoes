@@ -123,7 +123,7 @@ export class PoliedroToFtdSchemaMapper {
       questionUsed: false,
       anchorQuestion: false,
       questionCycle: 0,
-      transversalTheme: '',
+      transversalTheme: [''],
       createdBy: 'system',
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -237,7 +237,7 @@ export interface QuestionFTD {
   questionUsed: boolean;
   anchorQuestion: boolean;
   questionCycle?: number;
-  transversalTheme?: string;
+  transversalTheme?: string[];
   createdBy?: string;
   createdAt: string;
   updatedAt?: string;
