@@ -159,6 +159,7 @@ interface Skill {
 interface BNCC {
   skillCode: string;
   skill: string;
+  competenceNumber: number;
   knowledgeArea: string;
   segments: string[];
 }

@@ -1,5 +1,6 @@
 import { KnowledgeArea } from "../enitties/questionFTD";
 import { QuestionPoliedro } from "../enitties/questionPoliedro";
+import { BnccRepository } from "../repository/BnccRepository";
 
 
 export class PoliedroToFtdSchemaMapper {
@@ -28,106 +29,142 @@ export class PoliedroToFtdSchemaMapper {
     }
   }
 
-  excecute(input: QuestionPoliedro[]) {
-    const output = input.map((question: QuestionPoliedro) => ({
-      aggregatedId: question.aggregatedId,
-      knowledgeArea: question.classificacao?.enems?.length && this.knowledgeAreaMapper(question.classificacao?.enems[0].areaDoConhecimento),
-      subject: question.classificacao?.tradicionais?.length ? question.classificacao?.tradicionais[0].disciplina : 'adicionar disciplina',
-      stage: question.etapa,
-      classification: {
-        traditional: question.classificacao?.tradicionais?.map((tradicional) => ({
-          subject: tradicional.disciplina,
-          levels: tradicional.niveis.map((nivel) => ({
-            code: nivel.codigo,
-            level: nivel.nivel,
-          }))
-        })),
-        enem: question.classificacao?.enems?.map((enem) => ({
-          code: enem.codigo,
-          competence: {
-            code: enem.competencia.codigo,
-            description: enem.competencia.descricao,
-          },
-          skill: {
-            code: enem.habilidade.codigo,
-            description: enem.habilidade.descricao,
-          },
-          knowledgeArea: enem.areaDoConhecimento,
-          segments: enem.segmentos
-        })),
-        bncc: question.classificacao?.bnccs?.map((bncc) => ({
-          skillCode: bncc.codigoHabilidade,
-          skill: bncc.habilidade,
-          knowledgeArea: bncc.areaDoConhecimento,
-          segments: bncc.segmentos
-        })),
-        formativeTracks: {
-          id: '',
-          tracks: []
-        }
-      },
-      complexity: question.complexidade,
-      content: {
-        introductoryText: {
-          body: question.conteudo?.campos?.length ? question.conteudo.campos[0].textoIntrodutorio : '',
-          hasVisualElement: false
-        },
-        supportText: {
-          body: '',
-          hasVisualElement: false
-        },
-        fields: question.conteudo?.campos?.map((campo) => ({
-          statement: {
-            body: campo.enunciado?.corpo,
-            text: campo.enunciado?.texto,
-            hasVisualElement: false,
+  formatCompetenceMapper(competence: string | undefined) {
+    switch (competence) {
+      case 'C1': return 'Competência de área 1'
+      case 'C2': return 'Competência de área 2'
+      case 'C3': return 'Competência de área 3'
+      case 'C4': return 'Competência de área 4'
+      case 'C5': return 'Competência de área 5'
+      case 'C6': return 'Competência de área 6'
+      case 'C7': return 'Competência de área 7'
+      case 'C8': return 'Competência de área 8'
+      case 'C9': return 'Competência de área 9'
+    }
+  }
 
-          },
-          format: this.formatMapper(campo.formato),
-          alternatives: campo.alternativas?.map((alternativa) => ({
-            order: alternativa.ordem,
-            label: alternativa.label,
-            body: alternativa.corpo,
-            correct: alternativa.correta,
-            nominalValue: alternativa.valorNominal,
-            realValue: alternativa.valorReal,
-            justification: alternativa.justificativa,
-            charLimit: alternativa.limiteCaracteres,
-            isNumericAnswer: alternativa.respostaNumericas,
+  excecute(input: QuestionPoliedro[]) {
+
+    const formats = new Set(input.map((question) => {
+      if (!question.conteudo) {
+        return
+
+      }
+      if (!question.conteudo.campos) {
+        return
+      }
+
+      return question.conteudo?.campos.map((campos) => this.formatMapper(campos.formato))
+    }
+    ).flat())
+
+    console.log(formats)
+
+    const output = input.map((question: QuestionPoliedro) => {
+      const obj = {
+        aggregatedId: question.aggregatedId,
+        knowledgeArea: question.classificacao?.enems?.length && this.knowledgeAreaMapper(question.classificacao?.enems[0].areaDoConhecimento),
+        subject: question.classificacao?.tradicionais?.length ? question.classificacao?.tradicionais[0].disciplina : 'adicionar disciplina',
+        stage: question.etapa,
+        classification: {
+          traditional: question.classificacao?.tradicionais?.map((tradicional) => ({
+            subject: tradicional.disciplina,
+            levels: tradicional.niveis.map((nivel) => ({
+              code: nivel.codigo,
+              level: nivel.nivel,
+            }))
+          })),
+          enem: question.classificacao?.enems?.map((enem) => ({
+            code: enem.codigo,
+            competence: {
+              code: this.formatCompetenceMapper(enem.competencia.codigo),
+              description: enem.competencia.descricao,
+            },
+            skill: {
+              code: enem.habilidade.codigo,
+              description: enem.habilidade.descricao,
+            },
+            knowledgeArea: enem.areaDoConhecimento,
+            segments: enem.segmentos
+          })),
+          bncc: question.classificacao?.bnccs?.map((bncc) => {
+            return {
+              skillCode: bncc.codigoHabilidade,
+              skill: bncc.habilidade,
+              knowledgeArea: bncc.areaDoConhecimento,
+              segments: bncc.segmentos
+            }
+          }),
+          formativeTracks: {
+            id: '',
+            tracks: []
+          }
+        },
+        complexity: question.complexidade,
+        content: {
+          introductoryText: {
+            body: question.conteudo?.campos?.length ? question.conteudo.campos[0].textoIntrodutorio : '',
             hasVisualElement: false
+          },
+          supportText: {
+            body: '',
+            hasVisualElement: false
+          },
+          fields: question.conteudo?.campos?.map((campo) => ({
+            statement: {
+              body: campo.enunciado?.corpo,
+              text: campo.enunciado?.texto,
+              hasVisualElement: false,
+
+            },
+            format: this.formatMapper(campo.formato),
+            alternatives: campo.alternativas?.map((alternativa) => ({
+              order: alternativa.ordem,
+              label: alternativa.label,
+              body: alternativa.corpo,
+              correct: alternativa.correta,
+              nominalValue: alternativa.valorNominal,
+              realValue: alternativa.valorReal,
+              justification: alternativa.justificativa,
+              charLimit: alternativa.limiteCaracteres,
+              isNumericAnswer: alternativa.respostaNumericas,
+              hasVisualElement: false
+            }))
+          })),
+          solution: {
+            body: question.conteudo?.resolucao?.corpo,
+            hasVisualElement: false,
+            answer: question.conteudo?.resolucao?.resposta
+          }
+        },
+        relatedProject: {
+          id: 0,
+          label: ''
+        },
+        status: question.status,
+        origin: {
+          type: this.originMapper(question.origem?.tipo),
+          external: question.origem?.externos.map((externo) => ({
+            source: externo.fonte,
+            sublevels: externo.subniveis.map((subnivel) => ({
+              code: subnivel.codigo,
+              level: subnivel.nivel,
+            }))
           }))
-        })),
-        solution: {
-          body: question.conteudo?.resolucao?.corpo,
-          hasVisualElement: false,
-          answer: question.conteudo?.resolucao?.resposta
-        }
-      },
-      relatedProject: {
-        id: 0,
-        label: ''
-      },
-      status: question.status,
-      origin: {
-        type: this.originMapper(question.origem?.tipo),
-        external: question.origem?.externos.map((externo) => ({
-          source: externo.fonte,
-          sublevels: externo.subniveis.map((subnivel) => ({
-            code: subnivel.codigo,
-            level: subnivel.nivel,
-          }))
-        }))
-      },
-      year: question.ano,
-      history: [],
-      questionUsed: false,
-      anchorQuestion: false,
-      questionCycle: 0,
-      transversalTheme: [''],
-      createdBy: 'system',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }))
+        },
+        year: question.ano,
+        history: [],
+        questionUsed: false,
+        anchorQuestion: false,
+        questionCycle: 0,
+        transversalTheme: [''],
+        createdBy: 'system',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      return obj
+    }
+    )
 
     return output;
   }
