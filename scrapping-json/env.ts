@@ -8,7 +8,9 @@ const envSchema = z.object({
   INPUT_TO_ARCHIVE: z.string(),
   AZURE_STORAGE_CONTAINER_NAME: z.string(),
   AZURE_STORAGE_URL: z.string(),
-  API_URL: z.string()
+  API_URL: z.string(),
+  EMAIL: z.string(),
+  PASSWORD: z.string(),
 })
 
 const _env = envSchema.safeParse(process.env)

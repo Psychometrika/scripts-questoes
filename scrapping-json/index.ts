@@ -6,6 +6,7 @@ import { QuestionRepository } from "./repository/QuestionRepository";
 import { ReadAndWriteFileService } from "./services/ReadAndWriteFile.service";
 import { UpdateQuestionService } from './services/UpdateQuestions.service';
 import { PublicateQuestionAndPublishImagesService } from './services/PublicateQuestionAndPublishImages.service';
+import { ApiRepository } from './repository/ApiRepository';
 
 async function execute() {
   await connectToMongoDB()
@@ -13,10 +14,11 @@ async function execute() {
   const bnccRepository = new BnccRepository()
   const questionRepository = new QuestionRepository(bnccRepository)
   const mapper = new PoliedroToFtdSchemaMapper()
+  const apiRepository = new ApiRepository()
 
   const readAndWriteFileService = new ReadAndWriteFileService(mapper, questionRepository)
   const updateQuestionService = new UpdateQuestionService(questionRepository)
-  const publicateQuestionAndPublishImagesService = new PublicateQuestionAndPublishImagesService(questionRepository)
+  const publicateQuestionAndPublishImagesService = new PublicateQuestionAndPublishImagesService(questionRepository, apiRepository)
 
   const rl = readLine.createInterface({
     input: process.stdin,

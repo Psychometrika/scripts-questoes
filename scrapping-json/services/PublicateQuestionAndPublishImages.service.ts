@@ -2,76 +2,104 @@ import fs from 'node:fs';
 import path from "node:path";
 import { env } from '../env';
 import { QuestionRepository } from "../repository/QuestionRepository";
-import { BlobServiceClient } from '@azure/storage-blob'
-import { randomUUID } from 'crypto'
+import { BlobServiceClient } from '@azure/storage-blob';
+import { ApiRepository } from "../repository/ApiRepository";
+import { Question } from "../enitties/questionFTD";
 
+function replaceImageSources(html: string, imageMap: Record<string, string>): string {
+  return html.replace(/<img\s+[^>]*src=["']([^"']+)["']/g, (match, src) => {
+    const fileName = path.basename(src);
+    return imageMap[fileName] ? match.replace(src, imageMap[fileName]) : match;
+  });
+}
+
+function getMimeType(ext: string): string {
+  const types: Record<string, string> = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+  };
+  return types[ext.toLowerCase()] || 'application/octet-stream';
+}
+
+const INPUT_DIR = `../../input/${env.INPUT_TO_ARCHIVE}`;
 
 export class PublicateQuestionAndPublishImagesService {
-  constructor(private questionRepository: QuestionRepository) { }
+  constructor(
+    private questionRepository: QuestionRepository,
+    private apiRepository: ApiRepository
+  ) { }
 
-  uploadAdapter(loader: any) {
-    return {
-      upload: () => {
-        // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
-        return new Promise(async (resolve, reject) => {
-          try {
-            const file: File = await loader.file
+  private async getBlobContainerClient(): Promise<ReturnType<BlobServiceClient['getContainerClient']>> {
+    const { writeSaasToken } = await this.apiRepository.generateQuestionSaasToken();
+    const blobServiceClient = new BlobServiceClient(`${env.AZURE_STORAGE_URL}?${writeSaasToken.token}`);
+    return blobServiceClient.getContainerClient(env.AZURE_STORAGE_CONTAINER_NAME);
+  }
 
-            const body = new FormData()
-            body.append('uploadImg', file)
+  private async uploadImages(): Promise<Record<string, string>> {
+    const containerClient = await this.getBlobContainerClient();
 
-            const uniqueId = randomUUID()
-            const fileNameSanitized = file.name.replace(/\s+/g, '_')
-            const blobName = `${uniqueId}-${fileNameSanitized}`
+    const dirPath = path.join(__dirname, INPUT_DIR);
+    const files = fs.readdirSync(dirPath);
+    const imageMap: Record<string, string> = {};
 
-            const { writeSaasToken } = await generateQuestionSaasToken()
+    for (const file of files) {
+      const ext = path.extname(file).toLowerCase();
+      if (!['.jpg', '.jpeg', '.png'].includes(ext)) continue;
 
-            const URL_BLOB = env.AZURE_STORAGE_URL
+      const filePath = path.join(dirPath, file);
+      const buffer = fs.readFileSync(filePath);
+      const blobClient = containerClient.getBlockBlobClient(file);
 
-            const saasToken = writeSaasToken.token
+      await blobClient.uploadData(buffer, {
+        blobHTTPHeaders: { blobContentType: getMimeType(ext) },
+      });
 
-            const blobServiceClient = new BlobServiceClient(
-              `${URL_BLOB}?${saasToken}`
-            )
+      imageMap[file] = blobClient.url.split('?')[0];
+    }
 
-            const containerClient = blobServiceClient.getContainerClient(
-              env.AZURE_STORAGE_CONTAINER_NAME
-            )
+    return imageMap;
+  }
 
-            const blobClient = containerClient.getBlockBlobClient(blobName)
-
-            await blobClient.uploadData(file, {
-              blobHTTPHeaders: { blobContentType: file.type },
-            })
-
-            const urlImg = blobClient.url.split('?')[0]
-
-            resolve({
-              default: urlImg,
-            })
-
-          } catch (error) {
-            // biome-ignore lint/suspicious/noConsole: <explanation>
-            reject(error)
-          }
-        })
-      },
+  private updateFieldImageSources(field?: { body?: string; hasVisualElement?: boolean }, imageMap?: Record<string, string>) {
+    if (field?.hasVisualElement && field.body && imageMap) {
+      field.body = replaceImageSources(field.body, imageMap);
     }
   }
 
   async publicateQuestionAndPublishImages() {
+    const response =  await this.apiRepository.login(env.EMAIL, env.PASSWORD);
+    if (!response.accessToken) {
+      throw new Error('Falha ao obter o token de acesso');
+    }
 
-    console.log('Encontrando caminho do arquivo de entrada...')
-    const inputjson = path.join(__dirname, `../input/${env.INPUT_TO_UPDATE}.json`)
-    console.log('Arquivo encontrado com sucesso!')
+    const imageMap = await this.uploadImages();
 
-    console.log('Iniciando o processo de leitura e escrita de arquivo na pasta input...')
-    const jsonFile = JSON.parse(fs.readFileSync(inputjson, 'utf-8'))
-    console.log('Finalizando o processo de leitura e escrita de arquivo na pasta input...')
+    const inputJsonPath = path.join(__dirname, `${INPUT_DIR}/saida_final_processado.json`);
+    if (!fs.existsSync(inputJsonPath)) {
+      throw new Error(`Arquivo não encontrado: ${inputJsonPath}`);
+    }
 
-    console.log('Iniciando update no banco!')
-    await this.questionRepository.updateMany(jsonFile)
-    console.log('Finalizado update no banco!')
+    const questions: Question[] = JSON.parse(fs.readFileSync(inputJsonPath, 'utf-8'));
 
+    for (const question of questions) {
+      const { content } = question;
+
+      this.updateFieldImageSources(content?.introductoryText, imageMap);
+      this.updateFieldImageSources(content?.supportText, imageMap);
+      this.updateFieldImageSources(content?.solution, imageMap);
+      this.updateFieldImageSources(content?.solution, imageMap);
+
+      content?.fields?.forEach((field) => {
+        this.updateFieldImageSources(field.statement, imageMap);
+        field.alternatives?.forEach((alt) => this.updateFieldImageSources(alt, imageMap));
+      });
+    }
+
+    const outputJsonPath = path.join(__dirname, `${INPUT_DIR}/saida_com_classification.json`);
+
+    fs.writeFileSync(outputJsonPath, JSON.stringify(questions, null, 2), 'utf-8');
+
+    console.log('iniciando publicação das questões...');
   }
 }
