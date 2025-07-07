@@ -36,7 +36,7 @@ const Question = new Schema({
   },
   status: {
     type: Number,
-    enum: [0, 1, 2, 3],
+    enum: [0, 1, 2, 3, 4, 5],
     required: true,
   },
   origin: { type: Schema.Types.Mixed }, // Pode ser expandido

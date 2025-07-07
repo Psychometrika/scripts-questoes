@@ -1,10 +1,7 @@
 import fs from 'node:fs';
 import path from "node:path";
-import { PoliedroToFtdSchemaMapper } from "../mappers/poliedro-to-ftd.mapper";
-import { QuestionRepository } from "../repository/QuestionRepository";
 import { env } from '../env';
-import readLine from 'node:readline';
-import { BnccRepository } from '../repository/BnccRepository';
+import { QuestionRepository } from "../repository/QuestionRepository";
 
 
 export class UpdateQuestionService {

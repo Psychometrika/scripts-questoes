@@ -1,7 +1,9 @@
+import { Types } from 'mongoose';
+
 export enum Format {
-  SINGLE_ANSWER = 'Resposta única (Mútipla escolha)',
+  SINGLE_ANSWER = 'Resposta única (Múltipla escolha)',
   ESSAY = 'Dissertativa',
-  ALTERNATIVE = 'Alternativa',
+  ESSAY_MULTIPLE_ASK = 'Dissertativa (Múltiplas perguntas)',
   MULTIPLE_ANSWER = 'Resposta múltipla',
   TRUE_OR_FALSE = 'Verdadeiro ou Falso',
   ESSAY_SHEET = 'Folha de redação',
@@ -30,10 +32,10 @@ export enum Subject {
 }
 
 export enum KnowledgeArea {
-  'Linguagens' = 'Linguagens, Códigos e suas Tecnologias',
-  'Ciências Humanas' = 'Ciências Humanas e suas Tecnologias',
-  'Ciências da Natureza' = 'Ciências da Natureza e suas Tecnologias',
-  'Matemática' = 'Matemática e suas Tecnologias',
+  LANGUAGES = 'Linguagens, Códigos e suas Tecnologias',
+  HUMAN_SCIENCES = 'Ciências Humanas e suas Tecnologias',
+  NATURAL_SCIENCES = 'Ciências da Natureza e suas Tecnologias',
+  MATH = 'Matemática e suas Tecnologias',
 }
 
 export enum Stage {
@@ -42,6 +44,7 @@ export enum Stage {
   ELEMENTARY_LATE = 'EFAF',
   HIGH_SCHOOL = 'EM',
   PRE_UNIVERSITY = 'PV',
+  HIGHER_EDUCATION = 'ES',
 }
 
 export enum Complexity {
@@ -57,6 +60,8 @@ export enum Status {
   AWAITING_VALIDATION = 1,
   PUBLISHED = 2,
   ANNULLED = 3,
+  DRAFT_SCRIPT = 4,
+  VALIDATION_SCRIPT = 5
 }
 
 export enum Year {
@@ -70,12 +75,12 @@ export enum Year {
   SEVENTH_GRADE = '7º ano',
   EIGHTH_GRADE = '8º ano',
   NINTH_GRADE = '9º ano',
-  FIRST_YEAR_HIGH_SCHOOL = '1ª série',
-  SECOND_YEAR_HIGH_SCHOOL = '2ª série',
-  THIRD_YEAR_HIGH_SCHOOL = '3ª série',
+  FIRST_YEAR_HIGH_SCHOOL = '1ª Série',
+  SECOND_YEAR_HIGH_SCHOOL = '2ª Série',
+  THIRD_YEAR_HIGH_SCHOOL = '3ª Série',
 }
 
-enum OriginType {
+export enum OriginType {
   EXTERNAL = 'Externo',
   FTD = 'FTD',
 }
@@ -125,20 +130,62 @@ export interface Classification {
   traditional?: Traditional[];
   enem?: Enem[];
   bncc?: BNCC[];
+  topics?: Topic[];
+  marista?: Marista[];
+  saeb?: Saeb[];
   formativeTracks?: FormativeTracks;
 }
 
+interface Topic {
+  id: string;
+  subject: string;
+  levels: LevelTopic[];
+}
+
+interface LevelTopic {
+  id: string;
+  code: string;
+  level: number;
+}
+
+interface Marista {
+  id: string;
+  type: string;
+  levels: LevelMarista[];
+}
+
+interface LevelMarista {
+  id: string;
+  code: string;
+  level: number;
+}
+
+interface Saeb {
+  id: string;
+  knowledgeArea: string;
+  levels: LevelSaeb[];
+}
+
+interface LevelSaeb {
+  id: string;
+  code: string;
+  level: number;
+}
+
 interface Traditional {
+  id: string;
   subject: string;
   levels: Level[];
 }
 
 interface Level {
+  id: string;
   code: string;
   level: number;
 }
 
 interface Enem {
+  id: string;
   code: string;
   competence: Competence;
   skill: Skill;
@@ -157,6 +204,7 @@ interface Skill {
 }
 
 interface BNCC {
+  id: string;
   skillCode: string;
   skill: string;
   competenceNumber: number;
@@ -222,7 +270,42 @@ export interface RelatedProject {
   label: string;
 }
 
-export interface QuestionFTD {
+export interface StatusHistory {
+  status: Status;
+  timestamp: Date;
+}
+
+export interface Comments {
+  text: string;
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  photo: string;
+}
+
+export interface NumericParameters {
+  externalCalibration?: boolean;
+  calibrationTimestamp?: string;
+  originalScale?: {
+    mean?: number;
+    standardDeviation?: number;
+  };
+  ctt?: {
+    discriminationUpper?: number;
+    discriminationLower?: number;
+    biserialCorrelation?: number;
+    difficulty?: number;
+  };
+  irt?: {
+    a?: number;
+    b?: number;
+    c?: number;
+    d?: number;
+    u?: number;
+  };
+}
+
+export interface Question {
+  id: string;
   aggregatedId?: number;
   knowledgeArea?: KnowledgeArea;
   subject?: Subject;
@@ -232,14 +315,18 @@ export interface QuestionFTD {
   content?: Content;
   relatedProject?: RelatedProject;
   status: Status;
+  statusHistory?: StatusHistory[];
   origin?: Origin;
   year?: Year[];
   history?: string[];
   questionUsed: boolean;
+  numericParameters: NumericParameters;
   anchorQuestion: boolean;
   questionCycle?: number;
   transversalTheme?: string[];
   createdBy?: string;
+  creatorId?: string;
   createdAt: string;
   updatedAt?: string;
+  comments?: Comments[];
 }

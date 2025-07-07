@@ -4,7 +4,11 @@ import { z } from 'zod'
 const envSchema = z.object({
   MONGODB_URI: z.string(),
   INPUT_PATH: z.string(),
-  INPUT_TO_UPDATE: z.string()
+  INPUT_TO_UPDATE: z.string(),
+  INPUT_TO_ARCHIVE: z.string(),
+  AZURE_STORAGE_CONTAINER_NAME: z.string(),
+  AZURE_STORAGE_URL: z.string(),
+  API_URL: z.string()
 })
 
 const _env = envSchema.safeParse(process.env)
