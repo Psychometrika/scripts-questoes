@@ -36,6 +36,19 @@ interface LoginRequest {
   password: string;
 }
 
+interface BnccTreeParams {
+  code: string;
+}
+
+interface EnemTreeParams {
+  knowledgeArea: string;
+  code: string;
+}
+
+interface MaristaTreeParams {
+  code: string;
+}
+
 export class ApiRepository {
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
@@ -60,6 +73,33 @@ export class ApiRepository {
     const response = await makeRequest<SaasTokenResponse>({
       method: 'get',
       url: '/questions/saas-token',
+    });
+
+    return response.data;
+  }
+
+  async getBnccTree({ code }: BnccTreeParams) {
+    const response = await makeRequest({
+      method: 'get',
+      url: `/tree/bncc/tree-completed/${code}`,
+    });
+
+    return response.data;
+  }
+
+  async getEnemTree({ knowledgeArea, code }: EnemTreeParams) {
+    const response = await makeRequest({
+      method: 'get',
+      url: `/tree/enem/tree-completed/${knowledgeArea}/${code}`,
+    });
+
+    return response.data;
+  }
+
+  async getMaristaTree({ code }: MaristaTreeParams) {
+    const response = await makeRequest({
+      method: 'get',
+      url: `/tree/marista/tree-completed/${code}`,
     });
 
     return response.data;
