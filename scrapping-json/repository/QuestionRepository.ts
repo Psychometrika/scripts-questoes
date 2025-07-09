@@ -24,9 +24,23 @@ export class QuestionRepository {
   }
 
   async insertMany(data: any) {
-    const response = await QuestionSchema.insertMany(data)
+    const last = await QuestionSchema.findOne()
+      .sort({ aggregatedId: -1 })
+      .select('aggregatedId')
+      .lean();
 
-    return response.length
+    let currentId = last?.aggregatedId ?? 0;
+
+    const questionsAux = data.map((item) => {
+      currentId += 1;
+      return {
+        ...item,
+        aggregatedId: currentId,
+      };
+    });
+
+    const response = await QuestionSchema.insertMany(questionsAux);
+    return response.length;
   }
 
   async updateMany(data: QuestionFTD[]) {
