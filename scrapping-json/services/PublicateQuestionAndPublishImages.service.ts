@@ -5,6 +5,8 @@ import { QuestionRepository } from "../repository/QuestionRepository";
 import { BlobServiceClient } from '@azure/storage-blob';
 import { ApiRepository } from "../repository/ApiRepository";
 import { Question } from "../enitties/questionFTD";
+import { JsonToFtdSchemaMapper } from '../mappers/json-to-ftd.mapper';
+import { getBncc, getEnem, getMarista, parseClassification } from './utils/PrepareExtractClassification';
 
 function replaceImageSources(html: string, imageMap: Record<string, string>): string {
   return html.replace(/<img\s+[^>]*src=["']([^"']+)["']/g, (match, src) => {
@@ -68,7 +70,7 @@ export class PublicateQuestionAndPublishImagesService {
   }
 
   async publicateQuestionAndPublishImages() {
-    const response =  await this.apiRepository.login(env.EMAIL, env.PASSWORD);
+    const response = await this.apiRepository.login(env.EMAIL, env.PASSWORD);
     if (!response.accessToken) {
       throw new Error('Falha ao obter o token de acesso');
     }
@@ -81,7 +83,6 @@ export class PublicateQuestionAndPublishImagesService {
     }
 
     const questions: Question[] = JSON.parse(fs.readFileSync(inputJsonPath, 'utf-8'));
-
     for (const question of questions) {
       const { content } = question;
 
@@ -94,6 +95,26 @@ export class PublicateQuestionAndPublishImagesService {
         this.updateFieldImageSources(field.statement, imageMap);
         field.alternatives?.forEach((alt) => this.updateFieldImageSources(alt, imageMap));
       });
+
+      question.classification ??= {};
+
+      let classificationObj: Record<string, string> = {};
+      try {
+        const classificationStr = question.classification;
+        const parse = typeof classificationStr === 'string' ? classificationStr : JSON.stringify(classificationStr)
+        classificationObj = parseClassification(parse);
+
+      } catch (err) {
+        console.warn(`Erro ao parsear classificação da questão ${question.id}`);
+        return;
+      }
+
+      console.log(`Processando questão ${question.id} com classificação:`, classificationObj);
+      await Promise.all([
+        getBncc(question, classificationObj, this.apiRepository),
+        getEnem(question, classificationObj, this.apiRepository),
+        getMarista(question, classificationObj, this.apiRepository)
+      ]);
     }
 
     const outputJsonPath = path.join(__dirname, `${INPUT_DIR}/saida_com_classification.json`);
@@ -101,5 +122,13 @@ export class PublicateQuestionAndPublishImagesService {
     fs.writeFileSync(outputJsonPath, JSON.stringify(questions, null, 2), 'utf-8');
 
     console.log('iniciando publicação das questões...');
+    const jsonToInsert = fs.readFileSync(outputJsonPath, 'utf-8');
+    const parsedQuestions: Question[] = JSON.parse(jsonToInsert);
+
+    const mapper = new JsonToFtdSchemaMapper();
+    const questionsaux = mapper.execute(parsedQuestions);
+
+    const insertedCount = await this.questionRepository.insertMany(questionsaux);
+    console.log(`Publicadas ${insertedCount} questões com sucesso!`);
   }
 }

@@ -148,7 +148,7 @@ interface LevelTopic {
   level: number;
 }
 
-interface Marista {
+export interface Marista {
   id: string;
   type: string;
   levels: LevelMarista[];
@@ -184,7 +184,7 @@ interface Level {
   level: number;
 }
 
-interface Enem {
+export interface Enem {
   id: string;
   code: string;
   competence: Competence;
@@ -203,7 +203,7 @@ interface Skill {
   description: string;
 }
 
-interface BNCC {
+export interface BNCC {
   id: string;
   skillCode: string;
   skill: string;
