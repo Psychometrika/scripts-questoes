@@ -1,4 +1,4 @@
-import { BNCC, Enem, Marista } from '../enitties/questionFTD';
+import { BNCC, Enem, Marista, Saeb } from '../enitties/questionFTD';
 import { makeRequest, setupInterceptors } from '../lib/axios'
 
 interface SaasTokenResponse {
@@ -50,6 +50,10 @@ interface MaristaTreeParams {
   code: string;
 }
 
+interface SaebTreeParams {
+  code: string;
+}
+
 interface GetBnccTreeResponse {
   bncc: BNCC[];
 }
@@ -60,6 +64,10 @@ interface GetEnemTreeResponse {
 
 interface GetMaristaTreeResponse {
   marista: Marista[];
+}
+
+interface GetSaebTreeResponse {
+  saeb: Saeb[];
 }
 
 enum EEnemKnowledgeArea {
@@ -132,9 +140,23 @@ export class ApiRepository {
   async getMaristaTree({ code }: MaristaTreeParams): Promise<GetMaristaTreeResponse> {
     const response = await makeRequest<GetMaristaTreeResponse>({
       method: 'get',
-      url: `/tree/marista/tree-completed/${code}`,
+      url: `/tree/marista/tree-completed/${encodeURIComponent(code)}`,
     });
 
     return response.data;
+  }
+
+  async getSaebTree({ code }: SaebTreeParams): Promise<GetSaebTreeResponse> {
+    try {
+      console.log(`getSaebTree: ${code}`, `na rota /tree/saeb/tree-completed/${code}`);
+      const response = await makeRequest<GetSaebTreeResponse>({
+        method: 'get',
+        url: `/tree/saeb/tree-completed/${code}`,
+      });
+
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 }

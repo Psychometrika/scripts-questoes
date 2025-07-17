@@ -6,7 +6,8 @@ import { BlobServiceClient } from '@azure/storage-blob';
 import { ApiRepository } from "../repository/ApiRepository";
 import { Question } from "../enitties/questionFTD";
 import { JsonToFtdSchemaMapper } from '../mappers/json-to-ftd.mapper';
-import { getBncc, getEnem, getMarista, parseClassification } from './utils/PrepareExtractClassification';
+import { getBncc, getEnem, getMarista, getSaeb, parseClassification } from './utils/PrepareExtractClassification';
+import { ask } from './utils/ReadLine';
 
 function replaceImageSources(html: string, imageMap: Record<string, string>): string {
   return html.replace(/<img\s+[^>]*src=["']([^"']+)["']/g, (match, src) => {
@@ -70,63 +71,77 @@ export class PublicateQuestionAndPublishImagesService {
   }
 
   async publicateQuestionAndPublishImages() {
-    const response = await this.apiRepository.login(env.EMAIL, env.PASSWORD);
-    if (!response.accessToken) {
-      throw new Error('Falha ao obter o token de acesso');
-    }
+    const usarJsonClassificado = (await ask('já possui o JSON com classification? (s/n): ')).toLowerCase() === 's';
 
-    const imageMap = await this.uploadImages();
-
-    const inputJsonPath = path.join(__dirname, `${INPUT_DIR}/saida_final_processado.json`);
-    if (!fs.existsSync(inputJsonPath)) {
-      throw new Error(`Arquivo não encontrado: ${inputJsonPath}`);
-    }
-
-    const questions: Question[] = JSON.parse(fs.readFileSync(inputJsonPath, 'utf-8'));
-    for (const question of questions) {
-      const { content } = question;
-
-      this.updateFieldImageSources(content?.introductoryText, imageMap);
-      this.updateFieldImageSources(content?.supportText, imageMap);
-      this.updateFieldImageSources(content?.solution, imageMap);
-      this.updateFieldImageSources(content?.solution, imageMap);
-
-      content?.fields?.forEach((field) => {
-        this.updateFieldImageSources(field.statement, imageMap);
-        field.alternatives?.forEach((alt) => this.updateFieldImageSources(alt, imageMap));
-      });
-
-      question.classification ??= {};
-
-      let classificationObj: Record<string, string> = {};
-      try {
-        const classificationStr = question.classification;
-        const parse = typeof classificationStr === 'string' ? classificationStr : JSON.stringify(classificationStr)
-        classificationObj = parseClassification(parse);
-
-      } catch (err) {
-        console.warn(`Erro ao parsear classificação da questão ${question.id}`);
-        return;
-      }
-
-      console.log(`Processando questão ${question.id} com classificação:`, classificationObj);
-      await Promise.all([
-        getBncc(question, classificationObj, this.apiRepository),
-        getEnem(question, classificationObj, this.apiRepository),
-        getMarista(question, classificationObj, this.apiRepository)
-      ]);
-    }
-
+    let questions: Question[];
     const outputJsonPath = path.join(__dirname, `${INPUT_DIR}/saida_com_classification.json`);
 
-    fs.writeFileSync(outputJsonPath, JSON.stringify(questions, null, 2), 'utf-8');
+    if (usarJsonClassificado) {
+      if (!fs.existsSync(outputJsonPath)) {
+        throw new Error(`Arquivo classificado não encontrado: ${outputJsonPath}`);
+      }
 
-    console.log('iniciando publicação das questões...');
-    const jsonToInsert = fs.readFileSync(outputJsonPath, 'utf-8');
-    const parsedQuestions: Question[] = JSON.parse(jsonToInsert);
+      questions = JSON.parse(fs.readFileSync(outputJsonPath, 'utf-8'));
+    } else {
+      const response = await this.apiRepository.login(env.EMAIL, env.PASSWORD);
+      if (!response.accessToken) {
+        throw new Error('Falha ao obter o token de acesso');
+      }
+
+      const imageMap = await this.uploadImages();
+
+      const inputJsonPath = path.join(__dirname, `${INPUT_DIR}/saida_final_processado.json`);
+      if (!fs.existsSync(inputJsonPath)) {
+        throw new Error(`Arquivo não encontrado: ${inputJsonPath}`);
+      }
+
+      questions = JSON.parse(fs.readFileSync(inputJsonPath, 'utf-8'));
+
+      for (const question of questions) {
+        const { content } = question;
+
+        this.updateFieldImageSources(content?.introductoryText, imageMap);
+        this.updateFieldImageSources(content?.supportText, imageMap);
+        this.updateFieldImageSources(content?.solution, imageMap);
+
+        content?.fields?.forEach((field) => {
+          this.updateFieldImageSources(field.statement, imageMap);
+          field.alternatives?.forEach((alt) => this.updateFieldImageSources(alt, imageMap));
+        });
+
+        question.classification ??= {};
+
+        let classificationObj: Record<string, string> = {};
+        try {
+          const classificationStr = question.classification;
+          const parse = typeof classificationStr === 'string' ? classificationStr : JSON.stringify(classificationStr);
+          classificationObj = parseClassification(parse);
+        } catch (err) {
+          console.warn(`Erro ao parsear classificação da questão ${question.id}`);
+          return;
+        }
+
+        console.log(`Processando questão ${question.id} com classificação:`, classificationObj);
+
+        await Promise.all([
+          getBncc(question, classificationObj, this.apiRepository),
+          getEnem(question, classificationObj, this.apiRepository),
+          getMarista(question, classificationObj, this.apiRepository),
+          getSaeb(question, classificationObj, this.apiRepository)
+        ]);
+      }
+
+      fs.writeFileSync(outputJsonPath, JSON.stringify(questions, null, 2), 'utf-8');
+    }
+
+    console.log('\nClassificação finalizada.');
+    console.log('Revise o JSON gerado antes de continuar.');
+    await ask('Pressione Enter para continuar com a publicação das questões...');
+
+    console.log('Iniciando publicação das questões...');
 
     const mapper = new JsonToFtdSchemaMapper();
-    const questionsaux = mapper.execute(parsedQuestions);
+    const questionsaux = mapper.execute(questions);
 
     const insertedCount = await this.questionRepository.insertMany(questionsaux);
     console.log(`Publicadas ${insertedCount} questões com sucesso!`);

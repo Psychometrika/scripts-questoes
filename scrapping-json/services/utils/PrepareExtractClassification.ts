@@ -1,6 +1,6 @@
 import { Question } from "../../enitties/questionFTD";
 import { ApiRepository } from "../../repository/ApiRepository";
-
+import fs from 'fs/promises';
 
 export async function getBncc(
   question: Question,
@@ -36,7 +36,18 @@ export async function getBncc(
       question.classification = classificationObjFull;
     }
   } catch (e) {
-    console.warn(`Erro ao buscar BNCC Tree para ${code}`, e);
+    // console.warn(`Erro ao buscar BNCC Tree para ${code}`, e);
+
+    const status = e?.response?.status || e?.statusCode || e?.status;
+    const is404 = status === 404 || (typeof e?.message === 'string' && e.message.includes('404'));
+
+    if (is404) {
+      try {
+        await fs.appendFile('bncc-404.txt', code + '\n');
+      } catch (fsErr) {
+        console.error('Erro ao salvar código 404 no arquivo:', fsErr);
+      }
+    }
   }
 }
 
@@ -75,7 +86,7 @@ export async function getEnem(
       question.classification = classificationObjFull;
     }
   } catch (e) {
-    console.warn(`Erro ao buscar ENEM Tree para código ${code}`, e);
+    // console.warn(`Erro ao buscar ENEM Tree para código ${code}`, e);
   }
 }
 
@@ -114,24 +125,93 @@ export async function getMarista(
       question.classification = classificationObjFull;
     }
   } catch (e) {
-    console.warn(`Erro ao buscar Marista Tree para código ${code}`, e);
+    // console.warn(`Erro ao buscar Marista Tree para código ${code}`, e);
+    const status = e?.response?.status || e?.statusCode || e?.status;
+    const is404 = status === 404 || (typeof e?.message === 'string' && e.message.includes('404'));
+    if (is404) {
+      try {
+        await fs.appendFile('marista-404.txt', code + '\n');
+      } catch (fsErr) {
+        console.error('Erro ao salvar código 404 no arquivo:', fsErr);
+      }
+    }
   }
 }
 
-// Regex patterns para caso fuja do padrão JSON
-export function parseClassification(classification: string): Record<string, string> {
-  const result: Record<string, string> = {};
+export async function getSaeb(
+  question: Question,
+  classificationObj: Record<string, string>,
+  apiRepository: ApiRepository
+) {
+  const code = classificationObj['HABILIDADE SAEB'];
+  if (!code) return;
 
   try {
-    const parsed = JSON.parse(classification);
-    if (typeof parsed === 'object') {
-      extractRelevantFields(parsed, result);
-      return result;
+    const apiResp = await apiRepository.getSaebTree({ code });
+
+    if (Array.isArray(apiResp.saeb)) {
+      let classificationObjFull: Record<string, any>;
+
+      if (typeof question.classification === 'string') {
+        try {
+          classificationObjFull = JSON.parse(question.classification);
+        } catch {
+          classificationObjFull = { ...classificationObj };
+        }
+      } else {
+        classificationObjFull = question.classification ?? {};
+      }
+
+      classificationObjFull.saeb = apiResp.saeb;
+
+      question.classification = classificationObjFull;
     }
-  } catch (_) {}
+  } catch (e: any) {
+    const status = e?.response?.status || e?.statusCode || e?.status;
+    const is404 = status === 404 || (typeof e?.message === 'string' && e.message.includes('404'));
 
+    if (is404) {
+      // console.warn(`Código SAEB não encontrado (404): ${code}`);
+      try {
+        await fs.appendFile('saeb-404.txt', code + '\n');
+      } catch (fsErr) {
+        console.error('Erro ao salvar código SAEB 404 no arquivo:', fsErr);
+      }
+    } else {
+      console.error(`Erro ao buscar SAEB Tree para ${code}`, e);
+    }
+  }
+}
+
+export function parseClassification(classification: string): Record<string, string> {
+  try {
+    const parsed = JSON.parse(classification);
+    if (typeof parsed === 'object' && parsed !== null) {
+      const result: Record<string, string> = {};
+      extractRelevantFields(parsed, result);
+      if (Object.keys(result).length > 0) {
+        return result;
+      }
+    }
+  } catch (e) {
+    console.warn('Erro ao analisar JSON:');
+    const fixedJson = tryToFixMalformedJson(classification);
+    if (fixedJson) {
+      try {
+        const parsed = JSON.parse(fixedJson);
+        const result: Record<string, string> = {};
+
+        extractRelevantFields(parsed, result);
+
+        if (Object.keys(result).length > 0) {
+          return result;
+        }
+      } catch { }
+    }
+  }
+
+  const result: Record<string, string> = {};
   const lines = classification.split(/\r?\n/);
-
   for (const line of lines) {
     const trimmed = line.trim();
 
@@ -141,15 +221,10 @@ export function parseClassification(classification: string): Record<string, stri
       continue;
     }
 
-    const maristaMatch = trimmed.match(/HABILIDADE\s+MARISTA\s*[:：]?\s*(H[\w\d]+)/i);
+    const maristaMatch = trimmed.match(/HABILIDADE\s+MARISTA\s*[:：]?\s*(H[\w\d]+)\s*\(([^)]+)\)/i);
     if (maristaMatch) {
-      result["HABILIDADE MARISTA"] = maristaMatch[1].trim();
-      continue;
-    }
-
-    const habMatch = trimmed.match(/HABILIDADE\s*[:：]?\s*([A-Z0-9]+)/i);
-    if (habMatch) {
-      result["HABILIDADE"] = habMatch[1].trim();
+      const codeClean = `${maristaMatch[1]}(${maristaMatch[2]})`;
+      result["HABILIDADE MARISTA"] = codeClean;
       continue;
     }
 
@@ -171,7 +246,7 @@ export function parseClassification(classification: string): Record<string, stri
   return result;
 }
 
-function extractRelevantFields(source: Record<string, string>, target: Record<string, string>) {
+function extractRelevantFields(source: Record<string, any>, target: Record<string, string>) {
   for (const key in source) {
     const upperKey = key.toUpperCase();
     const value = source[key];
@@ -181,7 +256,14 @@ function extractRelevantFields(source: Record<string, string>, target: Record<st
     if (/HABILIDADE\s+BNCC/i.test(upperKey)) {
       const match = value.match(/[A-Z0-9]+/i);
       if (match) target["HABILIDADE BNCC"] = match[0].trim();
-    } else if (/HABILIDADE\s+MARISTA/i.test(upperKey)) {
+    }
+    else if (/HABILIDADE\s+SAEB/i.test(upperKey)) {
+      const match = value.match(/^([^-]+)/);
+      if (match) {
+        target["HABILIDADE SAEB"] = match[1].trim();
+      }
+    }
+    else if (/HABILIDADE\s+MARISTA/i.test(upperKey)) {
       target["HABILIDADE MARISTA"] = value.trim();
     } else if (/HABILIDADE/i.test(upperKey)) {
       target["HABILIDADE"] = value.trim();
@@ -191,5 +273,36 @@ function extractRelevantFields(source: Record<string, string>, target: Record<st
     } else if (/C\d+\s*\|\s*H\d+/i.test(value)) {
       target["CÓDIGOS"] = value.trim();
     }
+  }
+}
+
+function tryToFixMalformedJson(input: string): string | null {
+  try {
+    const match = input.match(/^\{.*\}$/s);
+    if (!match) return null;
+
+    const parts = input
+      .replace(/^{|}$/g, '')
+      .split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+      .map(part => part.trim())
+      .filter(part => part.includes(':'))
+
+    const fixedObject: Record<string, string> = {};
+
+    for (const part of parts) {
+      const [rawKey, ...rawValueParts] = part.split(':');
+      if (!rawKey || rawValueParts.length === 0) continue;
+
+      const key = rawKey.trim().replace(/^"+|"+$/g, '');
+      const value = rawValueParts.join(':').trim().replace(/^"+|"+$/g, '');
+
+      if (key && value) {
+        fixedObject[key] = value;
+      }
+    }
+
+    return JSON.stringify(fixedObject);
+  } catch {
+    return null;
   }
 }

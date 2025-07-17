@@ -160,7 +160,7 @@ interface LevelMarista {
   level: number;
 }
 
-interface Saeb {
+export interface Saeb {
   id: string;
   knowledgeArea: string;
   levels: LevelSaeb[];
