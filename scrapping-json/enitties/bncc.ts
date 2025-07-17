@@ -6,8 +6,8 @@ export enum EBNCCKnowledgeArea {
 }
 
 export type SpecificCompetence = {
-  number: number;
-  description: string;
+  number: number | null;
+  description: string | null;
 }
 
 export type Skill = {
